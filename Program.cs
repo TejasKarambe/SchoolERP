@@ -25,6 +25,8 @@ builder.Services.AddDbContext<SchoolDbContext>(options =>
 
 // Services
 builder.Services.AddScoped<IAcademicYearService, AcademicYearService>();
+builder.Services.AddScoped<IProgramService, ProgramService>();
+builder.Services.AddScoped<IClassService, ClassService>();
 
 var app = builder.Build();
 
@@ -39,18 +41,6 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-try
-{
-    app.MapControllers();
-}
-catch (ReflectionTypeLoadException ex)
-{
-    foreach (var loaderException in ex.LoaderExceptions)
-    {
-        Console.WriteLine(loaderException.Message);
-    }
-
-    throw;
-}
+app.MapControllers();
 
 app.Run();

@@ -1,18 +1,16 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using SchoolApi.DTOs.AcademicYear;
+﻿using Microsoft.AspNetCore.Mvc;
+using SchoolApi.DTOs.Classes;
 using SchoolApi.Services.Interfaces;
 
 namespace SchoolApi.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
-    //[Route("api/academic-years")]
-    public class AcademicYearsController : ControllerBase
+    [Route("api/classes")]
+    public class ClassesController : ControllerBase
     {
-        private readonly IAcademicYearService _service;
+        private readonly IClassService _service;
 
-        public AcademicYearsController(IAcademicYearService service)
+        public ClassesController(IClassService service)
         {
             _service = service;
         }
@@ -20,8 +18,7 @@ namespace SchoolApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _service.GetAllAsync();
-            return Ok(data);
+            return Ok(await _service.GetAllAsync());
         }
 
         [HttpGet("{id}")]
@@ -35,14 +32,13 @@ namespace SchoolApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(CreateAcademicYearDto dto)
+        public async Task<IActionResult> Create(CreateClassDto dto)
         {
-            var result = await _service.CreateAsync(dto);
-            return Ok(result);
+            return Ok(await _service.CreateAsync(dto));
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateAcademicYearDto dto)
+        public async Task<IActionResult> Update(int id, UpdateClassDto dto)
         {
             var result = await _service.UpdateAsync(id, dto);
 

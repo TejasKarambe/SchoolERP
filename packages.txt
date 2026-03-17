@@ -1,0 +1,11 @@
+Project 'SchoolApi' has the following package references
+   [net9.0]: 
+   Top-level Package                                            Requested   Resolved
+   > Microsoft.AspNetCore.OpenApi                               9.0.11      9.0.11  
+   > Microsoft.EntityFrameworkCore                              9.0.0       9.0.0   
+   > Microsoft.EntityFrameworkCore.Design                       9.0.0       9.0.0   
+   > Microsoft.EntityFrameworkCore.Tools                        9.0.0       9.0.0   
+   > Microsoft.VisualStudio.Azure.Containers.Tools.Targets      1.22.1      1.22.1  
+   > Pomelo.EntityFrameworkCore.MySql                           9.0.0       9.0.0   
+   > Swashbuckle.AspNetCore                                     10.1.5      10.1.5  
+
