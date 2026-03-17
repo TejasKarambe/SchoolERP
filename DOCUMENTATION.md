@@ -1,8 +1,9 @@
-# SchoolApi Documentation
+# SchoolApi — Complete Documentation
 
-> **Version:** 1.0 (In Progress)
+> **Version:** 2.0 (Full Implementation)
 > **Framework:** ASP.NET Core 9.0
 > **Database:** MySQL (via Pomelo EF Core)
+> **Auth:** JWT Bearer Tokens + BCrypt password hashing
 > **Last Updated:** March 2026
 
 ---
@@ -13,38 +14,60 @@
 2. [Technology Stack](#2-technology-stack)
 3. [Project Structure](#3-project-structure)
 4. [Architecture](#4-architecture)
-5. [Database Schema](#5-database-schema)
-6. [Implemented APIs](#6-implemented-apis)
-   - [Academic Years](#61-academic-years-api)
-   - [Programs](#62-programs-api)
-   - [Classes](#63-classes-api)
-7. [DTOs Reference](#7-dtos-reference)
-8. [Configuration & Setup](#8-configuration--setup)
-9. [Docker Support](#9-docker-support)
-10. [Planned Features (Not Yet Developed)](#10-planned-features-not-yet-developed)
-    - [Student Management](#101-student-management)
-    - [Staff Management](#102-staff-management)
-    - [Section Management](#103-section-management)
-    - [Subject Management](#104-subject-management)
-    - [Student Enrollment](#105-student-enrollment)
-    - [Staff Assignment](#106-staff-assignment)
-    - [Student Attendance](#107-student-attendance)
-    - [Staff Attendance](#108-staff-attendance)
-    - [Authentication & Authorization](#109-authentication--authorization)
-    - [Reporting Module](#1010-reporting-module)
-    - [Fee Management](#1011-fee-management)
-    - [Exam & Results](#1012-exam--results)
-    - [Notifications](#1013-notifications)
-11. [Coding Conventions](#11-coding-conventions)
-12. [EF Core Migrations](#12-ef-core-migrations)
+5. [Database Schema & Entities](#5-database-schema--entities)
+6. [Authentication & Authorization](#6-authentication--authorization)
+7. [API Reference — All Endpoints](#7-api-reference--all-endpoints)
+   - [Auth](#71-auth-api)
+   - [Academic Years](#72-academic-years-api)
+   - [Programs](#73-programs-api)
+   - [Classes](#74-classes-api)
+   - [Sections](#75-sections-api)
+   - [Subjects](#76-subjects-api)
+   - [Students](#77-students-api)
+   - [Staff](#78-staff-api)
+   - [Student Enrollments](#79-student-enrollments-api)
+   - [Staff Assignments](#710-staff-assignments-api)
+   - [Student Attendance](#711-student-attendance-api)
+   - [Staff Attendance](#712-staff-attendance-api)
+   - [Fees](#713-fees-api)
+   - [Exams & Results](#714-exams--results-api)
+   - [Notifications](#715-notifications-api)
+   - [Reports](#716-reports-api)
+8. [Roles & Permissions](#8-roles--permissions)
+9. [Configuration & Setup](#9-configuration--setup)
+10. [Docker Support](#10-docker-support)
+11. [EF Core Migrations](#11-ef-core-migrations)
+12. [Coding Conventions](#12-coding-conventions)
+13. [NuGet Packages](#13-nuget-packages)
 
 ---
 
 ## 1. Project Overview
 
-**SchoolApi** is a RESTful Web API backend built with ASP.NET Core 9.0, designed to power a complete School/Institution Management System. The API manages all core entities of a school — Programs, Classes, Sections, Students, Staff, Attendance, Enrollments — with full CRUD support.
+**SchoolApi** is a fully-featured, production-ready RESTful Web API built with **ASP.NET Core 9.0**. It serves as a complete backend for a **School Management System**, covering every aspect of school operations from student admissions to exam results, attendance tracking, fee management, and staff coordination.
 
-The project follows a clean **Controller → Service → Repository (EF Core DbContext)** layered architecture, promoting separation of concerns, testability, and scalability.
+### Key Features
+
+| Feature                  | Status |
+|--------------------------|--------|
+| JWT Authentication       | ✅ Done |
+| Role-based Authorization | ✅ Done |
+| Academic Year Management | ✅ Done |
+| Program/Class/Section CRUD | ✅ Done |
+| Subject Management       | ✅ Done |
+| Student Management       | ✅ Done |
+| Staff Management         | ✅ Done |
+| Student Enrollment       | ✅ Done |
+| Staff Assignment         | ✅ Done |
+| Student Attendance       | ✅ Done (incl. Bulk) |
+| Staff Attendance         | ✅ Done |
+| Fee Structure & Payments | ✅ Done |
+| Exam Management          | ✅ Done |
+| Exam Results             | ✅ Done (incl. Bulk) |
+| Notifications            | ✅ Done |
+| Reports & Analytics      | ✅ Done |
+| Docker Support           | ✅ Done |
+| Swagger/OpenAPI UI       | ✅ Done |
 
 ---
 
@@ -57,20 +80,10 @@ The project follows a clean **Controller → Service → Repository (EF Core DbC
 | ORM                   | Entity Framework Core 9.0              |
 | Database              | MySQL 8.x                              |
 | MySQL EF Provider     | Pomelo.EntityFrameworkCore.MySql 9.0.0 |
+| Authentication        | JWT Bearer (JwtBearer 9.0.0)           |
+| Password Hashing      | BCrypt.Net-Next 4.0.3                  |
 | API Documentation     | Swagger (Swashbuckle.AspNetCore 10.x)  |
 | Containerization      | Docker (Linux containers)              |
-| IDE                   | Visual Studio / VS Code                |
-
-### NuGet Packages
-
-| Package                                         | Version  | Purpose                            |
-|-------------------------------------------------|----------|------------------------------------|
-| `Microsoft.EntityFrameworkCore`                 | 9.0.0    | ORM core                           |
-| `Microsoft.EntityFrameworkCore.Design`          | 9.0.0    | EF migrations design-time tooling  |
-| `Microsoft.EntityFrameworkCore.Tools`           | 9.0.0    | EF CLI tools                       |
-| `Pomelo.EntityFrameworkCore.MySql`              | 9.0.0    | MySQL database provider            |
-| `Swashbuckle.AspNetCore`                        | 10.1.5   | Swagger / OpenAPI UI               |
-| `Microsoft.VisualStudio.Azure.Containers.Tools` | 1.22.1   | Docker/container tooling for VS    |
 
 ---
 
@@ -78,930 +91,768 @@ The project follows a clean **Controller → Service → Repository (EF Core DbC
 
 ```
 SchoolApi/
-├── Controllers/                        # API controllers (HTTP layer)
-│   ├── AcademicYearsController.cs
-│   ├── ClassesController.cs
-│   └── ProgramsController.cs
 │
-├── DTOs/                               # Data Transfer Objects (request/response shapes)
+├── Controllers/                          # HTTP endpoints
+│   ├── AuthController.cs
+│   ├── AcademicYearsController.cs
+│   ├── ProgramsController.cs
+│   ├── ClassesController.cs
+│   ├── SectionsController.cs
+│   ├── SubjectsController.cs
+│   ├── StudentsController.cs
+│   ├── StaffController.cs
+│   ├── StudentEnrollmentsController.cs
+│   ├── StaffAssignmentsController.cs
+│   ├── StudentAttendanceController.cs
+│   ├── StaffAttendanceController.cs
+│   ├── FeesController.cs
+│   ├── ExamsController.cs
+│   ├── NotificationsController.cs
+│   └── ReportsController.cs
+│
+├── DTOs/                                  # Request/response shapes
+│   ├── Auth/AuthDtos.cs
 │   ├── AcademicYear/
-│   │   ├── CreateAcademicYearDto.cs
-│   │   └── UpdateAcademicYearDto.cs
+│   ├── Programs/
 │   ├── Classes/
-│   │   ├── CreateClassDto.cs
-│   │   └── UpdateClassDto.cs
-│   └── Programs/
-│       ├── CreateProgramDto.cs
-│       └── UpdateProgramDto.cs
+│   ├── Sections/SectionDtos.cs
+│   ├── Subjects/SubjectDtos.cs
+│   ├── Students/StudentDtos.cs
+│   ├── Staff/StaffDtos.cs
+│   ├── Enrollments/EnrollmentDtos.cs
+│   ├── StaffAssignments/StaffAssignmentDtos.cs
+│   ├── Attendance/AttendanceDtos.cs
+│   ├── Fees/FeeDtos.cs
+│   ├── Exams/ExamDtos.cs
+│   ├── Notifications/NotificationDtos.cs
+│   └── Reports/ReportDtos.cs
+│
+├── Helpers/
+│   └── JwtHelper.cs                       # JWT token generation helper
 │
 ├── Models/
 │   ├── Data/
-│   │   ├── Configurations/             # EF Core Fluent API configurations
+│   │   ├── Configurations/               # EF Core Fluent API
+│   │   │   ├── StudentConfiguration.cs
 │   │   │   ├── ClassConfiguration.cs
 │   │   │   ├── SectionConfiguration.cs
-│   │   │   ├── StaffConfiguration.cs
-│   │   │   └── StudentConfiguration.cs
-│   │   └── SchoolDbContext.cs          # EF Core DbContext
-│   └── Entities/                       # Domain / Database models
+│   │   │   └── StaffConfiguration.cs
+│   │   └── SchoolDbContext.cs
+│   └── Entities/                         # Domain models
 │       ├── BaseEntity.cs
 │       ├── AcademicYear.cs
-│       ├── Class.cs
 │       ├── Program.cs (ProgramEntity)
+│       ├── Class.cs
 │       ├── Section.cs
-│       ├── Staff.cs
-│       ├── StaffAssignment.cs
-│       ├── StaffAttendance.cs
+│       ├── Subject.cs
 │       ├── Student.cs
-│       ├── StudentAttendance.cs
+│       ├── Staff.cs
+│       ├── User.cs
 │       ├── StudentEnrollment.cs
-│       └── Subject.cs
+│       ├── StaffAssignment.cs
+│       ├── StudentAttendance.cs
+│       ├── StaffAttendance.cs
+│       ├── FeeStructure.cs
+│       ├── FeePayment.cs
+│       ├── Exam.cs
+│       ├── ExamResult.cs
+│       └── Notification.cs
 │
 ├── Services/
-│   ├── Implementations/                # Concrete service logic
-│   │   ├── AcademicYearService.cs
-│   │   ├── ClassService.cs
-│   │   └── ProgramService.cs
-│   └── Interfaces/                     # Service contracts/abstractions
-│       ├── IAcademicYearService.cs
-│       ├── IClassService.cs
-│       └── IProgramService.cs
+│   ├── Interfaces/                       # Contracts
+│   │   ├── IAcademicYearService.cs
+│   │   ├── IProgramService.cs
+│   │   ├── IClassService.cs
+│   │   ├── ISectionService.cs
+│   │   ├── ISubjectService.cs
+│   │   ├── IStudentService.cs
+│   │   ├── IStaffService.cs
+│   │   ├── IStudentEnrollmentService.cs
+│   │   ├── IStaffAssignmentService.cs
+│   │   ├── IStudentAttendanceService.cs
+│   │   ├── IStaffAttendanceService.cs
+│   │   ├── IAuthService.cs
+│   │   ├── IFeeService.cs
+│   │   ├── IExamService.cs
+│   │   ├── INotificationService.cs
+│   │   └── IReportService.cs
+│   └── Implementations/                  # Business logic
+│       ├── AcademicYearService.cs
+│       ├── ProgramService.cs
+│       ├── ClassService.cs
+│       ├── SectionService.cs
+│       ├── SubjectService.cs
+│       ├── StudentService.cs
+│       ├── StaffService.cs
+│       ├── StudentEnrollmentService.cs
+│       ├── StaffAssignmentService.cs
+│       ├── StudentAttendanceService.cs
+│       ├── StaffAttendanceService.cs
+│       ├── AuthService.cs
+│       ├── FeeService.cs
+│       ├── ExamService.cs
+│       ├── NotificationService.cs
+│       └── ReportService.cs
 │
-├── Migrations/                         # EF Core migration files
-├── Properties/
-│   └── launchSettings.json
-├── appsettings.json                    # App configuration (DB connection, logging)
-├── appsettings.Development.json        # Dev-specific overrides
-├── Dockerfile                          # Docker container definition
-├── Program.cs                          # App bootstrap and DI configuration
-└── SchoolApi.csproj                    # Project file
+├── Migrations/                           # EF Core migration history
+├── appsettings.json                      # Configuration
+├── appsettings.Development.json
+├── Dockerfile
+├── Program.cs                            # App bootstrap & DI
+└── SchoolApi.csproj
 ```
 
 ---
 
 ## 4. Architecture
 
-The project uses a **3-layer architecture**:
-
 ```
 HTTP Request
      │
+     ▼ [JWT Middleware validates Bearer token]
+     │
      ▼
 ┌─────────────┐
-│ Controllers │  ← Receives HTTP requests, validates input, delegates to Service
+│ Controllers │  ← Route, validate input, call service
 └──────┬──────┘
        │
        ▼
 ┌─────────────┐
-│  Services   │  ← Business logic layer (Interfaces + Implementations)
+│  Services   │  ← Business logic (Interfaces + Implementations)
 └──────┬──────┘
        │
        ▼
 ┌─────────────┐
-│  DbContext  │  ← EF Core talks to MySQL database
+│  DbContext  │  ← EF Core → MySQL
 └─────────────┘
 ```
 
-### Dependency Injection Setup (`Program.cs`)
+### Dependency Injection Registration
 
-All services are registered as **Scoped** (per HTTP request):
+All services are **Scoped** (one per HTTP request):
 
 ```csharp
+// Helpers
+builder.Services.AddScoped<JwtHelper>();
+
+// Core
 builder.Services.AddScoped<IAcademicYearService, AcademicYearService>();
 builder.Services.AddScoped<IProgramService, ProgramService>();
 builder.Services.AddScoped<IClassService, ClassService>();
+
+// People
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
+
+// Academic Structure
+builder.Services.AddScoped<ISectionService, SectionService>();
+builder.Services.AddScoped<ISubjectService, SubjectService>();
+builder.Services.AddScoped<IStudentEnrollmentService, StudentEnrollmentService>();
+builder.Services.AddScoped<IStaffAssignmentService, StaffAssignmentService>();
+
+// Attendance
+builder.Services.AddScoped<IStudentAttendanceService, StudentAttendanceService>();
+builder.Services.AddScoped<IStaffAttendanceService, StaffAttendanceService>();
+
+// Auth, Finance, Exams
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IFeeService, FeeService>();
+builder.Services.AddScoped<IExamService, ExamService>();
+
+// Notifications & Reports
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 ```
 
-EF Core `DbContext` is configured to use MySQL with auto server-version detection:
+---
 
-```csharp
-builder.Services.AddDbContext<SchoolDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        ServerVersion.AutoDetect(connectionString)
-    )
-);
-```
+## 5. Database Schema & Entities
+
+### BaseEntity (Inherited by all entities)
+
+| Column      | Type        | Description             |
+|-------------|-------------|-------------------------|
+| `Id`        | INT PK AI   | Primary key             |
+| `CreatedAt` | DATETIME    | Auto-set to UTC now     |
+| `UpdatedAt` | DATETIME?   | Set on update           |
 
 ---
 
-## 5. Database Schema
-
-### BaseEntity (Abstract — all entities inherit this)
-
-| Column      | Type         | Description                     |
-|-------------|--------------|----------------------------------|
-| `Id`        | INT (PK, AI) | Primary Key, auto-increment      |
-| `CreatedAt` | DATETIME     | Defaults to `DateTime.UtcNow`    |
-| `UpdatedAt` | DATETIME?    | Nullable, set on update          |
-
----
-
-### ProgramEntity (Table: `Programs`)
-
-| Column        | Type         | Description                          |
-|---------------|--------------|--------------------------------------|
-| `Id`          | INT (PK)     | Inherited from BaseEntity            |
-| `Name`        | VARCHAR      | Name of the program (e.g., "Science")|
-| `Description` | TEXT         | Description of the program           |
-
-**Relationships:**
-- Has many → `Classes`
-
----
-
-### Class (Table: `Classes`)
-
-| Column         | Type     | Description                              |
-|----------------|----------|------------------------------------------|
-| `Id`           | INT (PK) | Primary Key                              |
-| `ProgramId`    | INT (FK) | Foreign key to `Programs`                |
-| `Name`         | VARCHAR  | Class name (e.g., "Class 10")            |
-| `DisplayOrder` | INT      | For sorting/display purposes             |
-
-**Relationships:**
-- Belongs to → `ProgramEntity`
-- Has many → `Sections`
-
----
-
-### Section (Table: `Sections`)
-
-| Column           | Type      | Description                             |
-|------------------|-----------|-----------------------------------------|
-| `Id`             | INT (PK)  | Primary Key                             |
-| `ClassId`        | INT (FK)  | FK to `Classes`                         |
-| `Name`           | VARCHAR   | Section name (e.g., "A", "B")           |
-| `ClassTeacherId` | INT? (FK) | Nullable FK to `Staff` (class teacher)  |
-
-**Relationships:**
-- Belongs to → `Class`
-- Belongs to → `Staff` (ClassTeacher, optional)
-- Has many → `Students`
-
----
-
-### Student (Table: `Students`)
-
-| Column            | Type     | Description                         |
-|-------------------|----------|-------------------------------------|
-| `Id`              | INT (PK) | Primary Key                         |
-| `AdmissionNumber` | VARCHAR(50) | Unique admission number          |
-| `FirstName`       | VARCHAR(100) | Student first name              |
-| `LastName`        | VARCHAR  | Student last name                   |
-| `Gender`          | VARCHAR  | Gender                              |
-| `DateOfBirth`     | DATETIME | Date of birth                       |
-| `AdmissionDate`   | DATETIME | Date of admission                   |
-| `SectionId`       | INT (FK) | FK to `Sections`                    |
-| `PhoneNumber`     | VARCHAR  | Contact number                      |
-
-**Constraints:**
-- `AdmissionNumber` is **required**, max 50 chars, **unique index**
-- `FirstName` is **required**, max 100 chars
-
-**Relationships:**
-- Belongs to → `Section`
-
----
-
-### Staff (Table: `Staff`)
-
-| Column        | Type     | Description                      |
-|---------------|----------|----------------------------------|
-| `Id`          | INT (PK) | Primary Key                      |
-| `StaffCode`   | VARCHAR  | Unique staff identifier code     |
-| `FirstName`   | VARCHAR  | First name                       |
-| `LastName`    | VARCHAR  | Last name                        |
-| `Role`        | VARCHAR  | Role (e.g., "Teacher", "Admin")  |
-| `Phone`       | VARCHAR  | Phone number                     |
-| `Email`       | VARCHAR  | Email address                    |
-| `JoiningDate` | DATETIME | Date of joining                  |
-
-**Relationships:**
-- Has many → `Sections` (as ClassTeacher)
-
----
-
-### Subject (Table: `Subjects`)
-
-| Column | Type     | Description          |
-|--------|----------|----------------------|
-| `Id`   | INT (PK) | Primary Key          |
-| `Name` | VARCHAR  | Subject name         |
-| `Code` | VARCHAR  | Subject code         |
-
----
-
-### AcademicYear (Table: `AcademicYears`)
-
-| Column      | Type     | Description                       |
-|-------------|----------|-----------------------------------|
-| `Id`        | INT (PK) | Primary Key                       |
-| `Name`      | VARCHAR  | E.g., "2025-2026"                 |
-| `StartDate` | DATETIME | Academic year start date          |
-| `EndDate`   | DATETIME | Academic year end date            |
-| `IsActive`  | BIT      | Whether this year is currently active |
-
-**Relationships:**
-- Has many → `StudentEnrollments`
-
----
-
-### StudentEnrollment (Table: `StudentEnrollments`)
-
-| Column           | Type     | Description                     |
-|------------------|----------|---------------------------------|
-| `Id`             | INT (PK) | Primary Key                     |
-| `StudentId`      | INT (FK) | FK to `Students`                |
-| `SectionId`      | INT (FK) | FK to `Sections`                |
-| `AcademicYearId` | INT (FK) | FK to `AcademicYears`           |
-
-**Relationships:**
-- Belongs to → `Student`, `Section`, `AcademicYear`
-
----
-
-### StudentAttendance (Table: `StudentAttendances`)
-
-| Column            | Type     | Description                               |
-|-------------------|----------|-------------------------------------------|
-| `Id`              | INT (PK) | Primary Key                               |
-| `StudentId`       | INT (FK) | FK to `Students`                          |
-| `SectionId`       | INT (FK) | FK to `Sections`                          |
-| `Date`            | DATETIME | Attendance date                           |
-| `Status`          | VARCHAR  | `"Present"` / `"Absent"` / `"Leave"`      |
-| `MarkedByStaffId` | INT (FK) | FK to `Staff` (who marked the attendance) |
-
-**Relationships:**
-- Belongs to → `Student`, `Section`, `Staff`
-
----
-
-### StaffAttendance (Table: `StaffAttendances`)
-
-| Column        | Type      | Description                       |
-|---------------|-----------|-----------------------------------|
-| `Id`          | INT (PK)  | Primary Key                       |
-| `StaffId`     | INT (FK)  | FK to `Staff`                     |
-| `Date`        | DATETIME  | Attendance date                   |
-| `CheckInTime` | TIMESPAN? | Optional check-in time            |
-| `CheckOutTime`| TIMESPAN? | Optional check-out time           |
-| `Status`      | VARCHAR   | Attendance status                 |
-
-**Relationships:**
-- Belongs to → `Staff`
-
----
-
-### StaffAssignment (Table: `StaffAssignments`)
-
-| Column          | Type      | Description                               |
-|-----------------|-----------|-------------------------------------------|
-| `Id`            | INT (PK)  | Primary Key                               |
-| `StaffId`       | INT (FK)  | FK to `Staff`                             |
-| `SectionId`     | INT (FK)  | FK to `Sections`                          |
-| `SubjectId`     | INT? (FK) | Optional FK to `Subjects`                 |
-| `IsClassTeacher`| BIT       | Whether staff is the class teacher        |
-
-**Relationships:**
-- Belongs to → `Staff`, `Section`, `Subject`
-
----
-
-### Entity Relationship Diagram
+### Entity Relationship Overview
 
 ```
 ProgramEntity
-    └── has many ──► Class
-                       └── has many ──► Section
-                                           ├── has many ──► Student
-                                           └── has one  ──► Staff (ClassTeacher)
+    └──► Class
+              └──► Section
+                       ├──► Student
+                       └──► Staff (ClassTeacher)
 
 AcademicYear
-    └── has many ──► StudentEnrollment
-                         ├── belongs to ──► Student
-                         └── belongs to ──► Section
+    ├──► StudentEnrollment (Student × Section × AcademicYear)
+    ├──► FeeStructure (Program × Class × AcademicYear)
+    └──► Exam (Class × Subject × AcademicYear)
 
-StaffAssignment
-    ├── belongs to ──► Staff
-    ├── belongs to ──► Section
-    └── belongs to ──► Subject
+Staff
+    ├──► StaffAssignment (Section × Subject)
+    └──► StaffAttendance
 
-StudentAttendance
-    ├── belongs to ──► Student
-    ├── belongs to ──► Section
-    └── belongs to ──► Staff (MarkedBy)
+Student
+    ├──► StudentEnrollment
+    ├──► StudentAttendance
+    ├──► FeePayment
+    └──► ExamResult
 
-StaffAttendance
-    └── belongs to ──► Staff
+Exam
+    └──► ExamResult (Student × Exam)
+
+User
+    └──► Staff (linked staff member)
+
+Notification
+    └──► User (CreatedBy)
 ```
 
 ---
 
-## 6. Implemented APIs
+### All Entity Tables
 
-> **Base URL (Development):** `https://localhost:{port}`
+| Entity             | Table                 | Key Fields                                          |
+|--------------------|----------------------|------------------------------------------------------|
+| `ProgramEntity`    | `Programs`           | Name, Description                                   |
+| `Class`            | `Classes`            | ProgramId (FK), Name, DisplayOrder                  |
+| `Section`          | `Sections`           | ClassId (FK), Name, ClassTeacherId? (FK→Staff)      |
+| `Subject`          | `Subjects`           | Name, Code                                          |
+| `AcademicYear`     | `AcademicYears`      | Name, StartDate, EndDate, IsActive                  |
+| `Student`          | `Students`           | AdmissionNumber (unique), FirstName, SectionId (FK) |
+| `Staff`            | `Staff`              | StaffCode, FirstName, Role, Email                   |
+| `User`             | `Users`              | Username, Email, PasswordHash, Role, StaffId? (FK)  |
+| `StudentEnrollment`| `StudentEnrollments` | StudentId, SectionId, AcademicYearId               |
+| `StaffAssignment`  | `StaffAssignments`   | StaffId, SectionId, SubjectId?, IsClassTeacher      |
+| `StudentAttendance`| `StudentAttendances` | StudentId, SectionId, Date, Status, MarkedByStaffId |
+| `StaffAttendance`  | `StaffAttendances`   | StaffId, Date, CheckIn?, CheckOut?, Status          |
+| `FeeStructure`     | `FeeStructures`      | ProgramId, ClassId?, AcademicYearId, FeeType, Amount|
+| `FeePayment`       | `FeePayments`        | StudentId, FeeStructureId, Amount, PaymentMode, Status|
+| `Exam`             | `Exams`              | Name, Type, ClassId, SubjectId, AcademicYearId, TotalMarks|
+| `ExamResult`       | `ExamResults`        | ExamId, StudentId, MarksObtained, Grade, IsAbsent   |
+| `Notification`     | `Notifications`      | Title, Body, TargetAudience, IsPublished, CreatedByUserId|
 
+---
+
+## 6. Authentication & Authorization
+
+### How It Works
+
+1. **Register** a user via `POST /api/auth/register` (Admin only)
+2. **Login** via `POST /api/auth/login` → receives `accessToken` + `refreshToken`
+3. Include the token in every subsequent request:
+   ```
+   Authorization: Bearer <accessToken>
+   ```
+4. **Refresh** the token via `POST /api/auth/refresh` when it expires
+5. **Logout** to revoke the refresh token
+
+### Roles
+
+| Role      | Access Level                                         |
+|-----------|------------------------------------------------------|
+| `Admin`   | Full access to all resources including user management |
+| `Teacher` | Can mark student attendance and enter exam results   |
+| `Staff`   | Can read all data, update own profile                |
+| `Parent`  | Read-only access to their child's data               |
+
+### JWT Configuration (`appsettings.json`)
+
+```json
+{
+  "Jwt": {
+    "Key": "SchoolApi_SuperSecretKey_2026_MustBe32CharsOrLonger!",
+    "Issuer": "SchoolApi",
+    "Audience": "SchoolApiClients",
+    "ExpiryMinutes": 60,
+    "RefreshExpiryDays": 7
+  }
+}
+```
+
+> ⚠️ Change the `Key` to a strong, random secret in production. Use **User Secrets** or environment variables — never commit real secrets to version control.
+
+---
+
+## 7. API Reference — All Endpoints
+
+> **Base URL (Dev):** `https://localhost:{port}`
 > **Swagger UI:** `https://localhost:{port}/swagger`
+> **Auth required:** ✅ (all routes except `POST /api/auth/login` and `POST /api/auth/refresh`)
 
 ---
 
-### 6.1 Academic Years API
+### 7.1 Auth API — `api/auth`
 
-**Route:** `api/AcademicYears`
+| Method  | Endpoint                          | Auth            | Description                      |
+|---------|-----------------------------------|-----------------|----------------------------------|
+| `POST`  | `/api/auth/login`                 | ❌ None          | Login, get JWT tokens            |
+| `POST`  | `/api/auth/register`              | ✅ Admin         | Create new user account          |
+| `POST`  | `/api/auth/refresh`               | ❌ None          | Refresh access token             |
+| `POST`  | `/api/auth/logout`                | ✅ Any           | Revoke refresh token             |
+| `GET`   | `/api/auth/me`                    | ✅ Any           | Get current user info            |
+| `POST`  | `/api/auth/change-password`       | ✅ Any           | Change own password              |
+| `GET`   | `/api/auth/users`                 | ✅ Admin         | List all users                   |
+| `PATCH` | `/api/auth/users/{id}/toggle-status` | ✅ Admin     | Enable / Disable a user          |
 
-| Method   | Endpoint                  | Description                        | Request Body              | Responses         |
-|----------|---------------------------|------------------------------------|---------------------------|-------------------|
-| `GET`    | `/api/AcademicYears`      | Get all academic years             | None                      | `200 OK` + list   |
-| `GET`    | `/api/AcademicYears/{id}` | Get single academic year by ID     | None                      | `200 OK` / `404`  |
-| `POST`   | `/api/AcademicYears`      | Create a new academic year         | `CreateAcademicYearDto`   | `200 OK` + entity |
-| `PATCH`  | `/api/AcademicYears/{id}` | Update an existing academic year   | `UpdateAcademicYearDto`   | `200 OK` / `404`  |
-| `DELETE` | `/api/AcademicYears/{id}` | Delete an academic year by ID      | None                      | `200 OK` / `404`  |
-
-**Example Request — Create Academic Year:**
+**Login Request:**
 ```json
-POST /api/AcademicYears
+POST /api/auth/login
+{ "email": "admin@school.com", "password": "Admin@123" }
+```
+
+**Login Response:**
+```json
 {
-  "name": "2025-2026",
-  "startDate": "2025-06-01T00:00:00Z",
-  "endDate": "2026-03-31T00:00:00Z",
-  "isActive": true
+  "accessToken": "eyJhbGc...",
+  "refreshToken": "abc123...",
+  "expiresAt": "2026-03-17T23:00:00Z",
+  "username": "admin",
+  "email": "admin@school.com",
+  "role": "Admin",
+  "userId": 1
 }
 ```
 
 ---
 
-### 6.2 Programs API
+### 7.2 Academic Years API — `api/AcademicYears`
 
-**Route:** `api/programs`
+| Method   | Endpoint                  | Auth     | Description          |
+|----------|---------------------------|----------|----------------------|
+| `GET`    | `/api/AcademicYears`      | ✅ Any   | Get all              |
+| `GET`    | `/api/AcademicYears/{id}` | ✅ Any   | Get by ID            |
+| `POST`   | `/api/AcademicYears`      | ✅ Any   | Create               |
+| `PATCH`  | `/api/AcademicYears/{id}` | ✅ Any   | Update               |
+| `DELETE` | `/api/AcademicYears/{id}` | ✅ Any   | Delete               |
 
-| Method   | Endpoint              | Description              | Request Body        | Responses         |
-|----------|-----------------------|--------------------------|---------------------|-------------------|
-| `GET`    | `/api/programs`       | Get all programs         | None                | `200 OK` + list   |
-| `GET`    | `/api/programs/{id}`  | Get program by ID        | None                | `200 OK` / `404`  |
-| `POST`   | `/api/programs`       | Create a new program     | `CreateProgramDto`  | `200 OK` + entity |
-| `PATCH`  | `/api/programs/{id}`  | Update program by ID     | `UpdateProgramDto`  | `200 OK` / `404`  |
-| `DELETE` | `/api/programs/{id}`  | Delete program by ID     | None                | `200 OK` / `404`  |
+---
 
-> **Note:** Program GET responses include the list of associated `Classes` (eager-loaded via `Include`).
+### 7.3 Programs API — `api/programs`
 
-**Example Request — Create Program:**
+| Method   | Endpoint              | Auth     | Description |
+|----------|-----------------------|----------|-------------|
+| `GET`    | `/api/programs`       | ✅ Any   | Get all (includes Classes) |
+| `GET`    | `/api/programs/{id}`  | ✅ Any   | Get by ID   |
+| `POST`   | `/api/programs`       | ✅ Any   | Create      |
+| `PATCH`  | `/api/programs/{id}`  | ✅ Any   | Update      |
+| `DELETE` | `/api/programs/{id}`  | ✅ Any   | Delete      |
+
+---
+
+### 7.4 Classes API — `api/classes`
+
+| Method   | Endpoint              | Auth     | Description |
+|----------|-----------------------|----------|-------------|
+| `GET`    | `/api/classes`        | ✅ Any   | Get all (includes Program) |
+| `GET`    | `/api/classes/{id}`   | ✅ Any   | Get by ID   |
+| `POST`   | `/api/classes`        | ✅ Any   | Create      |
+| `PATCH`  | `/api/classes/{id}`   | ✅ Any   | Update      |
+| `DELETE` | `/api/classes/{id}`   | ✅ Any   | Delete      |
+
+---
+
+### 7.5 Sections API — `api/sections`
+
+| Method   | Endpoint                        | Auth         | Description        |
+|----------|---------------------------------|--------------|--------------------|
+| `GET`    | `/api/sections`                 | ✅ Any       | Get all            |
+| `GET`    | `/api/sections/{id}`            | ✅ Any       | Get by ID (+students) |
+| `GET`    | `/api/sections/class/{classId}` | ✅ Any       | Get by class       |
+| `POST`   | `/api/sections`                 | ✅ Admin     | Create             |
+| `PATCH`  | `/api/sections/{id}`            | ✅ Admin     | Update             |
+| `DELETE` | `/api/sections/{id}`            | ✅ Admin     | Delete             |
+
+---
+
+### 7.6 Subjects API — `api/subjects`
+
+| Method   | Endpoint               | Auth     | Description |
+|----------|------------------------|----------|-------------|
+| `GET`    | `/api/subjects`        | ✅ Any   | Get all     |
+| `GET`    | `/api/subjects/{id}`   | ✅ Any   | Get by ID   |
+| `POST`   | `/api/subjects`        | ✅ Admin | Create      |
+| `PATCH`  | `/api/subjects/{id}`   | ✅ Admin | Update      |
+| `DELETE` | `/api/subjects/{id}`   | ✅ Admin | Delete      |
+
+---
+
+### 7.7 Students API — `api/students`
+
+| Method   | Endpoint                            | Auth      | Description          |
+|----------|-------------------------------------|-----------|----------------------|
+| `GET`    | `/api/students`                     | ✅ Any    | Get all (with Section/Class/Program)|
+| `GET`    | `/api/students/{id}`                | ✅ Any    | Get by ID            |
+| `GET`    | `/api/students/section/{sectionId}` | ✅ Any    | Get by section       |
+| `POST`   | `/api/students`                     | ✅ Admin  | Admit new student    |
+| `PATCH`  | `/api/students/{id}`                | ✅ Admin  | Update details       |
+| `DELETE` | `/api/students/{id}`                | ✅ Admin  | Remove student       |
+
+**Create Student Request:**
 ```json
-POST /api/programs
+POST /api/students
 {
-  "name": "Science",
-  "description": "Science stream with Physics, Chemistry, Biology"
+  "admissionNumber": "STU-2026-001",
+  "firstName": "Rahul",
+  "lastName": "Sharma",
+  "gender": "Male",
+  "dateOfBirth": "2010-05-15",
+  "admissionDate": "2026-06-01",
+  "sectionId": 1,
+  "phoneNumber": "9876543210"
 }
 ```
 
 ---
 
-### 6.3 Classes API
+### 7.8 Staff API — `api/staff`
 
-**Route:** `api/classes`
+| Method   | Endpoint           | Auth      | Description        |
+|----------|--------------------|-----------|--------------------|
+| `GET`    | `/api/staff`       | ✅ Any    | Get all staff      |
+| `GET`    | `/api/staff/{id}`  | ✅ Any    | Get by ID          |
+| `POST`   | `/api/staff`       | ✅ Admin  | Add new staff      |
+| `PATCH`  | `/api/staff/{id}`  | ✅ Admin  | Update details     |
+| `DELETE` | `/api/staff/{id}`  | ✅ Admin  | Remove staff       |
 
-| Method   | Endpoint              | Description             | Request Body      | Responses         |
-|----------|-----------------------|-------------------------|-------------------|-------------------|
-| `GET`    | `/api/classes`        | Get all classes         | None              | `200 OK` + list   |
-| `GET`    | `/api/classes/{id}`   | Get class by ID         | None              | `200 OK` / `404`  |
-| `POST`   | `/api/classes`        | Create a new class      | `CreateClassDto`  | `200 OK` + entity |
-| `PATCH`  | `/api/classes/{id}`   | Update class by ID      | `UpdateClassDto`  | `200 OK` / `404`  |
-| `DELETE` | `/api/classes/{id}`   | Delete class by ID      | None              | `200 OK` / `404`  |
+---
 
-> **Note:** Class GET responses include the associated `Program` (eager-loaded via `Include`).
+### 7.9 Student Enrollments API — `api/enrollments`
 
-**Example Request — Create Class:**
+| Method   | Endpoint                                     | Auth     | Description                  |
+|----------|----------------------------------------------|----------|------------------------------|
+| `GET`    | `/api/enrollments`                           | ✅ Any   | Get all enrollments          |
+| `GET`    | `/api/enrollments/{id}`                      | ✅ Any   | Get by ID                    |
+| `GET`    | `/api/enrollments/student/{studentId}`       | ✅ Any   | All enrollments for a student|
+| `GET`    | `/api/enrollments/academic-year/{yearId}`    | ✅ Any   | All enrollments in a year    |
+| `GET`    | `/api/enrollments/section/{sectionId}`       | ✅ Any   | All students in a section    |
+| `POST`   | `/api/enrollments`                           | ✅ Admin | Enroll a student             |
+| `DELETE` | `/api/enrollments/{id}`                      | ✅ Admin | Remove enrollment            |
+
+---
+
+### 7.10 Staff Assignments API — `api/staff-assignments`
+
+| Method   | Endpoint                                       | Auth     | Description                   |
+|----------|------------------------------------------------|----------|-------------------------------|
+| `GET`    | `/api/staff-assignments`                       | ✅ Any   | All assignments               |
+| `GET`    | `/api/staff-assignments/{id}`                  | ✅ Any   | Get by ID                     |
+| `GET`    | `/api/staff-assignments/staff/{staffId}`       | ✅ Any   | Assignments for a staff member|
+| `GET`    | `/api/staff-assignments/section/{sectionId}`   | ✅ Any   | Teachers of a section         |
+| `POST`   | `/api/staff-assignments`                       | ✅ Admin | Create assignment             |
+| `PATCH`  | `/api/staff-assignments/{id}`                  | ✅ Admin | Update assignment             |
+| `DELETE` | `/api/staff-assignments/{id}`                  | ✅ Admin | Remove assignment             |
+
+---
+
+### 7.11 Student Attendance API — `api/student-attendance`
+
+| Method   | Endpoint                                          | Auth               | Description                     |
+|----------|---------------------------------------------------|--------------------|---------------------------------|
+| `GET`    | `/api/student-attendance`                         | ✅ Any             | All records                     |
+| `GET`    | `/api/student-attendance/{id}`                    | ✅ Any             | Get by ID                       |
+| `GET`    | `/api/student-attendance/student/{studentId}`     | ✅ Any             | History for a student           |
+| `GET`    | `/api/student-attendance/section/{id}/date/{date}`| ✅ Any             | Section attendance by date      |
+| `POST`   | `/api/student-attendance`                         | ✅ Admin, Teacher  | Mark single attendance          |
+| `POST`   | `/api/student-attendance/bulk`                    | ✅ Admin, Teacher  | Bulk mark for whole section     |
+| `PATCH`  | `/api/student-attendance/{id}`                    | ✅ Admin, Teacher  | Correct attendance status       |
+| `DELETE` | `/api/student-attendance/{id}`                    | ✅ Admin           | Delete record                   |
+
+**Bulk Attendance Request:**
 ```json
-POST /api/classes
+POST /api/student-attendance/bulk
 {
-  "programId": 1,
-  "name": "Class 10",
-  "displayOrder": 10
+  "sectionId": 1,
+  "date": "2026-03-17",
+  "markedByStaffId": 5,
+  "entries": [
+    { "studentId": 1, "status": "Present" },
+    { "studentId": 2, "status": "Absent" },
+    { "studentId": 3, "status": "Leave" }
+  ]
+}
+```
+
+> **Note:** Submitting bulk attendance for a section/date that already has records will **replace** the existing records.
+
+---
+
+### 7.12 Staff Attendance API — `api/staff-attendance`
+
+| Method   | Endpoint                              | Auth     | Description                   |
+|----------|---------------------------------------|----------|-------------------------------|
+| `GET`    | `/api/staff-attendance`               | ✅ Any   | Get all records               |
+| `GET`    | `/api/staff-attendance/{id}`          | ✅ Any   | Get by ID                     |
+| `GET`    | `/api/staff-attendance/staff/{staffId}`| ✅ Any  | History for a staff member    |
+| `GET`    | `/api/staff-attendance/date/{date}`   | ✅ Any   | All staff attendance on a date|
+| `POST`   | `/api/staff-attendance`               | ✅ Admin | Mark attendance               |
+| `PATCH`  | `/api/staff-attendance/{id}`          | ✅ Admin | Update (e.g., add checkout)   |
+| `DELETE` | `/api/staff-attendance/{id}`          | ✅ Admin | Delete record                 |
+
+**Status values:** `Present`, `Absent`, `Leave`, `HalfDay`
+
+---
+
+### 7.13 Fees API — `api/fees`
+
+#### Fee Structures
+
+| Method   | Endpoint                                      | Auth     | Description               |
+|----------|-----------------------------------------------|----------|---------------------------|
+| `GET`    | `/api/fees/structures`                        | ✅ Any   | All fee structures        |
+| `GET`    | `/api/fees/structures/{id}`                   | ✅ Any   | Get by ID                 |
+| `GET`    | `/api/fees/structures/program/{programId}`    | ✅ Any   | By program                |
+| `POST`   | `/api/fees/structures`                        | ✅ Admin | Create fee structure      |
+| `PATCH`  | `/api/fees/structures/{id}`                   | ✅ Admin | Update                    |
+| `DELETE` | `/api/fees/structures/{id}`                   | ✅ Admin | Delete                    |
+
+#### Fee Payments
+
+| Method   | Endpoint                                   | Auth     | Description               |
+|----------|--------------------------------------------|----------|---------------------------|
+| `GET`    | `/api/fees/payments`                       | ✅ Any   | All payments              |
+| `GET`    | `/api/fees/payments/{id}`                  | ✅ Any   | Get by ID                 |
+| `GET`    | `/api/fees/payments/student/{studentId}`   | ✅ Any   | Student payment history   |
+| `GET`    | `/api/fees/payments/pending`               | ✅ Any   | Pending/partial payments  |
+| `POST`   | `/api/fees/payments`                       | ✅ Admin | Record payment            |
+| `PATCH`  | `/api/fees/payments/{id}`                  | ✅ Admin | Update payment            |
+| `DELETE` | `/api/fees/payments/{id}`                  | ✅ Admin | Delete payment            |
+
+**Fee Types:** `Tuition`, `Library`, `Lab`, `Transport`, `Exam`
+**Payment Modes:** `Cash`, `Online`, `Cheque`, `BankTransfer`
+**Payment Status:** `Paid`, `Partial`, `Pending`
+
+---
+
+### 7.14 Exams & Results API — `api/exams`
+
+#### Exams
+
+| Method   | Endpoint                                  | Auth     | Description             |
+|----------|-------------------------------------------|----------|-------------------------|
+| `GET`    | `/api/exams`                              | ✅ Any   | All exams               |
+| `GET`    | `/api/exams/{id}`                         | ✅ Any   | Get by ID               |
+| `GET`    | `/api/exams/class/{classId}`              | ✅ Any   | Exams for a class       |
+| `GET`    | `/api/exams/academic-year/{yearId}`       | ✅ Any   | Exams in a year         |
+| `POST`   | `/api/exams`                              | ✅ Admin | Create exam             |
+| `PATCH`  | `/api/exams/{id}`                         | ✅ Admin | Update exam             |
+| `DELETE` | `/api/exams/{id}`                         | ✅ Admin | Delete exam             |
+
+#### Results
+
+| Method   | Endpoint                                  | Auth               | Description              |
+|----------|-------------------------------------------|--------------------|--------------------------|
+| `GET`    | `/api/exams/{examId}/results`             | ✅ Any             | All results for an exam  |
+| `GET`    | `/api/exams/results/student/{studentId}`  | ✅ Any             | All results for a student|
+| `POST`   | `/api/exams/results`                      | ✅ Admin, Teacher  | Add single result        |
+| `POST`   | `/api/exams/results/bulk`                 | ✅ Admin, Teacher  | Bulk enter results       |
+| `PATCH`  | `/api/exams/results/{id}`                 | ✅ Admin, Teacher  | Update result            |
+| `DELETE` | `/api/exams/results/{id}`                 | ✅ Admin           | Delete result            |
+
+**Exam Types:** `UnitTest`, `MidTerm`, `Final`, `Internal`
+
+**Bulk Result Request:**
+```json
+POST /api/exams/results/bulk
+{
+  "examId": 1,
+  "results": [
+    { "studentId": 1, "marksObtained": 85, "grade": "A", "isAbsent": false },
+    { "studentId": 2, "marksObtained": 0,  "grade": null, "isAbsent": true }
+  ]
 }
 ```
 
 ---
 
-## 7. DTOs Reference
+### 7.15 Notifications API — `api/notifications`
 
-### AcademicYear DTOs
+| Method   | Endpoint                              | Auth     | Description               |
+|----------|---------------------------------------|----------|---------------------------|
+| `GET`    | `/api/notifications`                  | ✅ Any   | All notifications         |
+| `GET`    | `/api/notifications/{id}`             | ✅ Any   | Get by ID                 |
+| `GET`    | `/api/notifications/audience/{aud}`   | ✅ Any   | By audience (published only)|
+| `POST`   | `/api/notifications`                  | ✅ Admin | Create notification       |
+| `PATCH`  | `/api/notifications/{id}`             | ✅ Admin | Update notification       |
+| `DELETE` | `/api/notifications/{id}`             | ✅ Admin | Delete notification       |
 
-**`CreateAcademicYearDto` / `UpdateAcademicYearDto`**
-
-| Field       | Type     | Required |
-|-------------|----------|----------|
-| `Name`      | `string` | ✅       |
-| `StartDate` | `DateTime`| ✅      |
-| `EndDate`   | `DateTime`| ✅      |
-| `IsActive`  | `bool`   | ✅       |
-
----
-
-### Program DTOs
-
-**`CreateProgramDto` / `UpdateProgramDto`**
-
-| Field         | Type     | Required |
-|---------------|----------|----------|
-| `Name`        | `string` | ✅       |
-| `Description` | `string` | ✅       |
+**Target Audiences:** `All`, `Students`, `Staff`, `Parents`
 
 ---
 
-### Class DTOs
+### 7.16 Reports API — `api/reports`
 
-**`CreateClassDto` / `UpdateClassDto`**
+| Method | Endpoint                                                       | Auth        | Description                      |
+|--------|----------------------------------------------------------------|-------------|----------------------------------|
+| `GET`  | `/api/reports/attendance/student/{studentId}`                  | ✅ Any      | Student attendance summary       |
+| `GET`  | `/api/reports/attendance/section/{sectionId}/date/{date}`      | ✅ Any      | Section report on a date         |
+| `GET`  | `/api/reports/attendance/section/{sectionId}/range?from=&to=`  | ✅ Any      | Section attendance over a range  |
+| `GET`  | `/api/reports/attendance/staff/{staffId}`                      | ✅ Any      | Staff attendance summary         |
+| `GET`  | `/api/reports/exams/{examId}/results`                          | ✅ Any      | Full exam result report          |
+| `GET`  | `/api/reports/students/{studentId}/results`                    | ✅ Any      | All results for a student        |
+| `GET`  | `/api/reports/fees/academic-year/{yearId}`                     | ✅ Admin    | Fee collection summary           |
+| `GET`  | `/api/reports/fees/student/{studentId}/academic-year/{yearId}` | ✅ Any      | Student fee dues/paid summary    |
 
-| Field          | Type     | Required |
-|----------------|----------|----------|
-| `ProgramId`    | `int`    | ✅       |
-| `Name`         | `string` | ✅       |
-| `DisplayOrder` | `int`    | ✅       |
+**Query Params for Attendance (optional):** `?from=2026-01-01&to=2026-03-31`
 
 ---
 
-## 8. Configuration & Setup
+## 8. Roles & Permissions
+
+| Endpoint / Action          | Admin | Teacher | Staff | Parent |
+|----------------------------|:-----:|:-------:|:-----:|:------:|
+| Login / Refresh            | ✅    | ✅      | ✅    | ✅     |
+| Register User              | ✅    | ❌      | ❌    | ❌     |
+| Toggle User Status         | ✅    | ❌      | ❌    | ❌     |
+| Create Student/Staff       | ✅    | ❌      | ❌    | ❌     |
+| Read Students/Staff        | ✅    | ✅      | ✅    | ✅     |
+| Mark Attendance            | ✅    | ✅      | ❌    | ❌     |
+| Enter Exam Results         | ✅    | ✅      | ❌    | ❌     |
+| Manage Fees                | ✅    | ❌      | ❌    | ❌     |
+| Create Notifications       | ✅    | ❌      | ❌    | ❌     |
+| View Reports               | ✅    | ✅      | ✅    | ✅     |
+| View Fee Collection Report | ✅    | ❌      | ❌    | ❌     |
+
+---
+
+## 9. Configuration & Setup
 
 ### Prerequisites
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- MySQL Server 8.x (running locally or remote)
-- Visual Studio 2022 / VS Code (with C# extension)
+- MySQL Server 8.x
+- Visual Studio 2022+ or VS Code
 
-### Environment Setup
+### Step-by-Step Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd SchoolApi
-   ```
-
-2. **Configure the database connection**
-
-   Edit `appsettings.json`:
-   ```json
-   {
-     "ConnectionStrings": {
-       "DefaultConnection": "server=localhost;database=school_db;user=root;password=yourpassword"
-     }
-   }
-   ```
-   
-   > ⚠️ **Never commit passwords to source control.** Use `appsettings.Development.json` or **User Secrets** for local dev credentials.
-
-3. **Restore NuGet packages**
-   ```bash
-   dotnet restore
-   ```
-
-4. **Apply EF Core Migrations** (create/update the database schema)
-   ```bash
-   dotnet ef database update
-   ```
-
-5. **Run the API**
-   ```bash
-   dotnet run
-   ```
-
-6. **Open Swagger UI**
-   
-   Navigate to: `https://localhost:{port}/swagger`
-
-### User Secrets (Recommended for Development)
-
-Instead of putting credentials in `appsettings.json`, use user secrets:
 ```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "server=localhost;database=school_db;user=root;password=yourpassword"
+# 1. Clone the project
+git clone <repository-url>
+cd SchoolApi
+
+# 2. Set database connection (edit appsettings.json or use secrets)
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "server=localhost;database=school_db;user=root;password=yourpassword"
+
+# 3. Set JWT Key (important in production!)
+dotnet user-secrets set "Jwt:Key" "YourRandomSecretKeyAtLeast32Chars!"
+
+# 4. Run migrations to create all database tables
+dotnet ef database update
+
+# 5. Run the application
+dotnet run
+
+# 6. Open Swagger UI
+# Navigate to: https://localhost:{port}/swagger
 ```
+
+### First-Time Setup
+
+Since all endpoints require auth, you'll need to seed an admin user directly in the database to bootstrap:
+
+```sql
+-- Run in MySQL after applying migrations
+INSERT INTO Users (Username, Email, PasswordHash, Role, IsActive, CreatedAt)
+VALUES (
+  'admin',
+  'admin@school.com',
+  '$2a$11$...', -- BCrypt hash of your password
+  'Admin',
+  1,
+  NOW()
+);
+```
+
+Or add a seed endpoint in development mode.
 
 ---
 
-## 9. Docker Support
+## 10. Docker Support
 
-The project includes a multi-stage `Dockerfile` targeting Linux containers.
-
-### Dockerfile Stages
-
-| Stage     | Base Image                        | Purpose                          |
-|-----------|-----------------------------------|----------------------------------|
-| `base`    | `mcr.microsoft.com/dotnet/aspnet:9.0` | Runtime base image           |
-| `build`   | `mcr.microsoft.com/dotnet/sdk:9.0`    | Restore & build                |
-| `publish` | `build`                               | Publish the release artifact   |
-| `final`   | `base`                                | Final production image         |
-
-**Exposed Ports:**
-- `8080` (HTTP)
-- `8081` (HTTPS)
-
-### Build & Run with Docker
-
-```bash
-# Build the Docker image
+```dockerfile
+# Build and run
 docker build -t school-api .
 
-# Run the container
 docker run -d -p 8080:8080 \
   -e ConnectionStrings__DefaultConnection="server=host.docker.internal;database=school_db;user=root;password=root" \
+  -e Jwt__Key="YourProductionSecretKey32CharsPlus!" \
+  -e Jwt__Issuer="SchoolApi" \
+  -e Jwt__Audience="SchoolApiClients" \
   --name school-api \
   school-api
 ```
 
----
-
-## 10. Planned Features (Not Yet Developed)
-
-This section documents all major modules and APIs that are **defined in the data model but not yet implemented** with controllers, services, or business logic. These represent the development roadmap.
+Exposed ports: `8080` (HTTP), `8081` (HTTPS)
 
 ---
 
-### 10.1 Student Management
-
-**Status:** ❌ Not Implemented (Entity exists, no Controller/Service)
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                          | Description                         |
-|----------|-----------------------------------|-------------------------------------|
-| `GET`    | `/api/students`                   | Get all students (with pagination)  |
-| `GET`    | `/api/students/{id}`              | Get student by ID                   |
-| `GET`    | `/api/students/section/{sectionId}` | Get all students in a section     |
-| `POST`   | `/api/students`                   | Admit a new student                 |
-| `PATCH`  | `/api/students/{id}`              | Update student details              |
-| `DELETE` | `/api/students/{id}`              | Remove a student                    |
-
-**Planned DTOs:**
-```csharp
-// CreateStudentDto
-{
-  string AdmissionNumber,
-  string FirstName,
-  string LastName,
-  string Gender,
-  DateTime DateOfBirth,
-  DateTime AdmissionDate,
-  int SectionId,
-  string PhoneNumber
-}
-```
-
-**Required Files to Create:**
-- `DTOs/Students/CreateStudentDto.cs`
-- `DTOs/Students/UpdateStudentDto.cs`
-- `Services/Interfaces/IStudentService.cs`
-- `Services/Implementations/StudentService.cs`
-- `Controllers/StudentsController.cs`
-
----
-
-### 10.2 Staff Management
-
-**Status:** ❌ Not Implemented (Entity exists, no Controller/Service)
-
-**Planned Endpoints:**
-
-| Method   | Endpoint               | Description                       |
-|----------|------------------------|-----------------------------------|
-| `GET`    | `/api/staff`           | Get all staff members             |
-| `GET`    | `/api/staff/{id}`      | Get staff by ID                   |
-| `POST`   | `/api/staff`           | Add a new staff member            |
-| `PATCH`  | `/api/staff/{id}`      | Update staff details              |
-| `DELETE` | `/api/staff/{id}`      | Remove a staff member             |
-
-**Planned DTOs:**
-```csharp
-// CreateStaffDto
-{
-  string StaffCode,
-  string FirstName,
-  string LastName,
-  string Role,
-  string Phone,
-  string Email,
-  DateTime JoiningDate
-}
-```
-
-**Required Files to Create:**
-- `DTOs/Staff/CreateStaffDto.cs`
-- `DTOs/Staff/UpdateStaffDto.cs`
-- `Services/Interfaces/IStaffService.cs`
-- `Services/Implementations/StaffService.cs`
-- `Controllers/StaffController.cs`
-
----
-
-### 10.3 Section Management
-
-**Status:** ❌ Not Implemented (Entity exists, no Controller/Service)
-
-Sections are subdivisions of a Class (e.g., Class 10 → Section A, B, C).
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                           | Description                          |
-|----------|------------------------------------|--------------------------------------|
-| `GET`    | `/api/sections`                    | Get all sections                     |
-| `GET`    | `/api/sections/{id}`               | Get section by ID                    |
-| `GET`    | `/api/sections/class/{classId}`    | Get all sections of a class          |
-| `POST`   | `/api/sections`                    | Create a new section                 |
-| `PATCH`  | `/api/sections/{id}`               | Update section (e.g., assign teacher)|
-| `DELETE` | `/api/sections/{id}`               | Delete a section                     |
-
-**Required Files to Create:**
-- `DTOs/Sections/CreateSectionDto.cs`
-- `DTOs/Sections/UpdateSectionDto.cs`
-- `Services/Interfaces/ISectionService.cs`
-- `Services/Implementations/SectionService.cs`
-- `Controllers/SectionsController.cs`
-
----
-
-### 10.4 Subject Management
-
-**Status:** ❌ Not Implemented (Entity exists, no CRUD APIs)
-
-**Planned Endpoints:**
-
-| Method   | Endpoint               | Description            |
-|----------|------------------------|------------------------|
-| `GET`    | `/api/subjects`        | Get all subjects       |
-| `GET`    | `/api/subjects/{id}`   | Get subject by ID      |
-| `POST`   | `/api/subjects`        | Create a new subject   |
-| `PATCH`  | `/api/subjects/{id}`   | Update a subject       |
-| `DELETE` | `/api/subjects/{id}`   | Delete a subject       |
-
-**Required Files to Create:**
-- `DTOs/Subjects/CreateSubjectDto.cs`
-- `DTOs/Subjects/UpdateSubjectDto.cs`
-- `Services/Interfaces/ISubjectService.cs`
-- `Services/Implementations/SubjectService.cs`
-- `Controllers/SubjectsController.cs`
-
----
-
-### 10.5 Student Enrollment
-
-**Status:** ❌ Not Implemented (Entity exists, no CRUD APIs)
-
-Student Enrollment links a Student to a Section and an AcademicYear. A student is enrolled each academic year.
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                                      | Description                              |
-|----------|-----------------------------------------------|------------------------------------------|
-| `GET`    | `/api/enrollments`                            | Get all enrollments                      |
-| `GET`    | `/api/enrollments/{id}`                       | Get enrollment by ID                     |
-| `GET`    | `/api/enrollments/student/{studentId}`        | Get all enrollments for a student        |
-| `GET`    | `/api/enrollments/year/{academicYearId}`      | Get all enrollments in an academic year  |
-| `POST`   | `/api/enrollments`                            | Enroll a student for an academic year    |
-| `DELETE` | `/api/enrollments/{id}`                       | Cancel/remove an enrollment              |
-
-**Required Files to Create:**
-- `DTOs/Enrollments/CreateStudentEnrollmentDto.cs`
-- `Services/Interfaces/IStudentEnrollmentService.cs`
-- `Services/Implementations/StudentEnrollmentService.cs`
-- `Controllers/StudentEnrollmentsController.cs`
-
----
-
-### 10.6 Staff Assignment
-
-**Status:** ❌ Not Implemented (Entity exists, no CRUD APIs)
-
-Staff assignment defines which teacher teaches which subject in which section, and who the class teacher is.
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                                  | Description                                |
-|----------|-------------------------------------------|--------------------------------------------|
-| `GET`    | `/api/staff-assignments`                  | Get all assignments                        |
-| `GET`    | `/api/staff-assignments/{id}`             | Get assignment by ID                       |
-| `GET`    | `/api/staff-assignments/staff/{staffId}`  | Get all assignments for a staff member     |
-| `GET`    | `/api/staff-assignments/section/{sectionId}` | Get all teachers of a section           |
-| `POST`   | `/api/staff-assignments`                  | Assign staff to a section/subject          |
-| `PATCH`  | `/api/staff-assignments/{id}`             | Update an assignment                       |
-| `DELETE` | `/api/staff-assignments/{id}`             | Remove an assignment                       |
-
-**Required Files to Create:**
-- `DTOs/StaffAssignments/CreateStaffAssignmentDto.cs`
-- `DTOs/StaffAssignments/UpdateStaffAssignmentDto.cs`
-- `Services/Interfaces/IStaffAssignmentService.cs`
-- `Services/Implementations/StaffAssignmentService.cs`
-- `Controllers/StaffAssignmentsController.cs`
-
----
-
-### 10.7 Student Attendance
-
-**Status:** ❌ Not Implemented (Entity exists, no CRUD APIs)
-
-Tracks daily student attendance per section. Attendance can be `Present`, `Absent`, or `Leave`.
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                                           | Description                              |
-|----------|----------------------------------------------------|------------------------------------------|
-| `GET`    | `/api/student-attendance`                          | Get all attendance records               |
-| `GET`    | `/api/student-attendance/section/{sectionId}/date/{date}` | Get attendance for a section on a date |
-| `GET`    | `/api/student-attendance/student/{studentId}`      | Get attendance history for a student     |
-| `POST`   | `/api/student-attendance`                          | Mark attendance for a student            |
-| `POST`   | `/api/student-attendance/bulk`                     | Mark attendance for all students in bulk |
-| `PATCH`  | `/api/student-attendance/{id}`                     | Correct/update an attendance record      |
-
-**Required Files to Create:**
-- `DTOs/Attendance/CreateStudentAttendanceDto.cs`
-- `DTOs/Attendance/BulkStudentAttendanceDto.cs`
-- `Services/Interfaces/IStudentAttendanceService.cs`
-- `Services/Implementations/StudentAttendanceService.cs`
-- `Controllers/StudentAttendanceController.cs`
-
----
-
-### 10.8 Staff Attendance
-
-**Status:** ❌ Not Implemented (Entity exists, no CRUD APIs)
-
-Tracks daily staff attendance with optional check-in/check-out times.
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                                      | Description                                  |
-|----------|-----------------------------------------------|----------------------------------------------|
-| `GET`    | `/api/staff-attendance`                       | Get all staff attendance records             |
-| `GET`    | `/api/staff-attendance/staff/{staffId}`       | Get attendance history of a staff member     |
-| `GET`    | `/api/staff-attendance/date/{date}`           | Get all staff attendance on a date           |
-| `POST`   | `/api/staff-attendance`                       | Mark staff attendance                        |
-| `PATCH`  | `/api/staff-attendance/{id}`                  | Update attendance (e.g., add check-out time) |
-
-**Required Files to Create:**
-- `DTOs/Attendance/CreateStaffAttendanceDto.cs`
-- `DTOs/Attendance/UpdateStaffAttendanceDto.cs`
-- `Services/Interfaces/IStaffAttendanceService.cs`
-- `Services/Implementations/StaffAttendanceService.cs`
-- `Controllers/StaffAttendanceController.cs`
-
----
-
-### 10.9 Authentication & Authorization
-
-**Status:** ❌ Not Implemented
-
-**Description:** Secure the API with JWT-based authentication and role-based authorization.
-
-**Planned Roles:**
-- `Admin` — Full access to all resources
-- `Teacher` — Can mark attendance, view assigned sections/students
-- `Staff` — Limited access (view own profile, apply leave)
-- `Parent/Guardian` — View their child's attendance, results (optional mobile-facing API)
-
-**Planned Endpoints:**
-
-| Method | Endpoint              | Description                           |
-|--------|-----------------------|---------------------------------------|
-| `POST` | `/api/auth/login`     | Login with credentials, get JWT token |
-| `POST` | `/api/auth/refresh`   | Refresh expired token                 |
-| `POST` | `/api/auth/logout`    | Invalidate/revoke token               |
-| `GET`  | `/api/auth/me`        | Get current logged-in user profile    |
-
-**Required NuGet Packages to Add:**
-- `Microsoft.AspNetCore.Authentication.JwtBearer`
-- `System.IdentityModel.Tokens.Jwt`
-
-**Required Files to Create:**
-- `Models/Entities/User.cs` (with role, password hash)
-- `DTOs/Auth/LoginDto.cs`
-- `DTOs/Auth/TokenResponseDto.cs`
-- `Services/Interfaces/IAuthService.cs`
-- `Services/Implementations/AuthService.cs`
-- `Controllers/AuthController.cs`
-
----
-
-### 10.10 Reporting Module
-
-**Status:** ❌ Not Planned / Not Yet Designed
-
-Reporting endpoints to generate summary data.
-
-**Planned Endpoints:**
-
-| Method | Endpoint                                                | Description                           |
-|--------|----------------------------------------------------------|---------------------------------------|
-| `GET`  | `/api/reports/attendance/student/{studentId}`           | Full attendance report for a student  |
-| `GET`  | `/api/reports/attendance/section/{sectionId}/summary`   | Section-level attendance summary      |
-| `GET`  | `/api/reports/attendance/staff/{staffId}`               | Staff attendance report               |
-| `GET`  | `/api/reports/students/section/{sectionId}`             | Student list report for a section     |
-
----
-
-### 10.11 Fee Management
-
-**Status:** ❌ Not Yet Designed (No entity defined)
-
-A future module to manage student fees, payment records, and dues.
-
-**Planned Entities (to be designed):**
-- `FeeStructure` — Define fee types per program/class
-- `FeePayment` — Track payments by student per academic year
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                          | Description                          |
-|----------|-----------------------------------|--------------------------------------|
-| `GET`    | `/api/fee-structure`              | Get fee structure list               |
-| `POST`   | `/api/fee-structure`              | Create a fee structure               |
-| `POST`   | `/api/fee-payments`               | Record a fee payment for a student   |
-| `GET`    | `/api/fee-payments/student/{id}`  | Get payment history of a student     |
-| `GET`    | `/api/fee-payments/pending`       | Get list of students with due fees   |
-
----
-
-### 10.12 Exam & Results
-
-**Status:** ❌ Not Yet Designed (No entity defined)
-
-A module to manage exams, question papers, marks/results.
-
-**Planned Entities (to be designed):**
-- `Exam` — Exam metadata (name, date, type)
-- `ExamResult` — Marks per student per subject
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                              | Description                      |
-|----------|---------------------------------------|----------------------------------|
-| `GET`    | `/api/exams`                          | Get all exams                    |
-| `POST`   | `/api/exams`                          | Create an exam                   |
-| `POST`   | `/api/exam-results`                   | Add results for an exam          |
-| `GET`    | `/api/exam-results/student/{id}`      | Get all results for a student    |
-| `GET`    | `/api/exam-results/exam/{examId}`     | Get all results for an exam      |
-
----
-
-### 10.13 Notifications
-
-**Status:** ❌ Not Yet Designed
-
-A module to manage announcements, school notices, and event alerts.
-
-**Planned Entities (to be designed):**
-- `Notification` — Title, body, target audience, created date
-
-**Planned Endpoints:**
-
-| Method   | Endpoint                    | Description                         |
-|----------|-----------------------------|-------------------------------------|
-| `GET`    | `/api/notifications`        | Get all notifications               |
-| `POST`   | `/api/notifications`        | Create/send a notification          |
-| `DELETE` | `/api/notifications/{id}`   | Delete a notification               |
-
----
-
-## 11. Coding Conventions
-
-| Convention              | Detail                                                                 |
-|-------------------------|------------------------------------------------------------------------|
-| **Naming**              | PascalCase for classes, methods. camelCase for local variables.        |
-| **DTOs**                | Separate `Create` and `Update` DTOs per entity stored in `DTOs/`       |
-| **Service Interfaces**  | All services defined in `Services/Interfaces/` using `I` prefix        |
-| **Async**               | All service and controller methods are `async Task<>`                  |
-| **HTTP Methods**        | `GET` = read, `POST` = create, `PATCH` = partial update, `DELETE` = remove |
-| **Error Responses**     | Return `NotFound()` when entity by ID doesn't exist                   |
-| **Timestamps**          | `CreatedAt` set at entity creation. `UpdatedAt` set in service `UpdateAsync`. |
-| **EF Configurations**   | Entity constraints (indexes, required fields, max lengths) defined in `Data/Configurations/` using Fluent API |
-| **Namespace**           | `SchoolApi.` prefix for all namespaces, matching folder structure      |
-
----
-
-## 12. EF Core Migrations
-
-Migrations are stored in the `/Migrations` folder.
-
-### Common Commands
+## 11. EF Core Migrations
 
 ```bash
 # Add a new migration
 dotnet ef migrations add <MigrationName>
 
-# Apply pending migrations to the database
+# Apply to database
 dotnet ef database update
 
-# Rollback to a previous migration
+# Rollback one migration
 dotnet ef database update <PreviousMigrationName>
 
-# Remove the last (unapplied) migration
+# Remove last unapplied migration
 dotnet ef migrations remove
 
-# List all migrations
+# List migrations
 dotnet ef migrations list
 
-# Generate SQL script for migrations
+# Generate SQL script
 dotnet ef migrations script
 ```
 
-> **Note:** Always run migrations from the project root directory where `SchoolApi.csproj` is located.
+### Migration History
+
+| Migration Name            | Description                                      |
+|---------------------------|--------------------------------------------------|
+| `Initial` (or previous)   | Programs, Classes, Sections, Subjects, Students  |
+| `AddFullSchoolManagement` | Users, FeeStructure, FeePayment, Exam, ExamResult, Notification |
 
 ---
 
-*Documentation generated: March 2026*
-*Author: SchoolApi Development Team*
+## 12. Coding Conventions
+
+| Convention         | Standard                                                              |
+|--------------------|-----------------------------------------------------------------------|
+| Naming             | PascalCase for classes/methods; camelCase for local vars              |
+| Async              | All service and controller methods use `async Task<>`                 |
+| HTTP Verbs         | GET=read, POST=create, PATCH=partial update, DELETE=remove            |
+| Not Found          | Returns `NotFound()` when entity not found by ID                      |
+| Timestamps         | `CreatedAt` set at creation; `UpdatedAt` set in `UpdateAsync()`       |
+| DTOs               | Separate Create and Update DTOs per entity                            |
+| Namespace          | Matches folder path: `SchoolApi.Controllers`, etc.                    |
+| EF Configs         | Entity constraints defined via Fluent API in `Configurations/`        |
+| JSON Cycles        | `ReferenceHandler.IgnoreCycles` prevents circular serialization issues|
+| Auth               | `[Authorize]` on controllers; `[Authorize(Roles="...")]` on endpoints |
+
+---
+
+## 13. NuGet Packages
+
+| Package                                         | Version  | Purpose                               |
+|-------------------------------------------------|----------|---------------------------------------|
+| `Microsoft.EntityFrameworkCore`                 | 9.0.0    | ORM core                              |
+| `Microsoft.EntityFrameworkCore.Design`          | 9.0.0    | EF migrations design-time tooling     |
+| `Microsoft.EntityFrameworkCore.Tools`           | 9.0.0    | EF CLI tools                          |
+| `Pomelo.EntityFrameworkCore.MySql`              | 9.0.0    | MySQL database provider               |
+| `Microsoft.AspNetCore.Authentication.JwtBearer` | 9.0.0    | JWT middleware                        |
+| `BCrypt.Net-Next`                               | 4.0.3    | Password hashing                      |
+| `Swashbuckle.AspNetCore`                        | 10.1.5   | Swagger / OpenAPI UI                  |
+| `Microsoft.VisualStudio.Azure.Containers.Tools` | 1.22.1   | Docker/container tooling for VS       |
+
+---
+
+*Documentation version 2.0 — Full Implementation*
+*SchoolApi Development Team — March 2026*
